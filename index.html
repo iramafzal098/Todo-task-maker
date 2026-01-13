@@ -1,0 +1,191 @@
+To do task maker
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌈 Multi-Screen To-Do List</title>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding-top: 50px;
+  }
+
+  .container {
+    background: rgba(255,255,255,0.95);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    width: 380px;
+    text-align: center;
+  }
+
+  h2 { margin-bottom: 20px; color: #333; }
+
+  input, button, select {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    outline: none;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  input { width: 60%; }
+  select { width: 30%; }
+
+  button {
+    cursor: pointer;
+    border: none;
+    background: #ff6f91;
+    color: white;
+    transition: 0.3s;
+    margin-left: 5px;
+  }
+
+  button:hover { background: #ff476f; }
+
+  .tabs { display: flex; justify-content: space-around; margin-bottom: 15px; }
+  .tab { cursor: pointer; padding: 8px 15px; border-radius: 12px; transition: 0.3s; }
+  .tab.active { background: #ff6f91; color: white; font-weight: bold; }
+
+  ul { list-style: none; padding: 0; margin-top: 10px; }
+  li {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    margin: 8px 0;
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  li.done { text-decoration: line-through; opacity: 0.6; background: linear-gradient(135deg,#cfd9df,#e2ebf0); }
+
+  .delBtn { background: transparent; border: none; color: #ff4b5c; font-size: 18px; cursor: pointer; }
+  .delBtn:hover { transform: scale(1.2); }
+
+  .due { font-size: 12px; margin-left: 5px; color: #555; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>🌈 My To-Do List</h2>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-filter="all">All</div>
+    <div class="tab" data-filter="today">Today</div>
+    <div class="tab" data-filter="completed">Completed</div>
+  </div>
+
+  <!-- Input -->
+  <input id="taskInput" placeholder="Enter a task" />
+  <input type="date" id="dueDate" />
+  <button id="addBtn">Add</button>
+
+  <!-- Task list -->
+  <ul id="taskList"></ul>
+</div>
+
+<script>
+const taskInput = document.getElementById('taskInput');
+const dueDateInput = document.getElementById('dueDate');
+const addBtn = document.getElementById('addBtn');
+const taskList = document.getElementById('taskList');
+const tabs = document.querySelectorAll('.tab');
+
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let currentFilter = 'all';
+
+// Render tasks based on current filter
+function renderTasks() {
+  taskList.innerHTML = '';
+  const today = new Date().toISOString().split('T')[0];
+
+  tasks.forEach((task, index) => {
+    let show = false;
+    if(currentFilter === 'all') show = true;
+    else if(currentFilter === 'today' && task.due === today && !task.done) show = true;
+    else if(currentFilter === 'completed' && task.done) show = true;
+
+    if(!show) return;
+
+    const li = document.createElement('li');
+    li.textContent = task.text;
+    if(task.done) li.classList.add('done');
+
+    if(task.due) {
+      const span = document.createElement('span');
+      span.className = 'due';
+      span.textContent = `(Due: ${task.due})`;
+      li.appendChild(span);
+    }
+
+    li.addEventListener('click', () => {
+      tasks[index].done = !tasks[index].done;
+      saveAndRender();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '❌';
+    delBtn.className = 'delBtn';
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tasks.splice(index, 1);
+      saveAndRender();
+    });
+    li.appendChild(delBtn);
+
+    taskList.appendChild(li);
+  });
+}
+
+// Save to localStorage and rerender
+function saveAndRender() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  renderTasks();
+}
+
+// Add task
+addBtn.addEventListener('click', () => {
+  const text = taskInput.value.trim();
+  const due = dueDateInput.value;
+  if(!text) return;
+  tasks.push({ text, done: false, due });
+  taskInput.value = '';
+  dueDateInput.value = '';
+  saveAndRender();
+});
+
+// Enter key adds task
+taskInput.addEventListener('keypress', (e) => {
+  if(e.key === 'Enter') addBtn.click();
+});
+
+// Tab click
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.getAttribute('data-filter');
+    renderTasks();
+  });
+});
+
+// Initial render
+renderTasks();
+</script>
+
+</body>
+</html>
